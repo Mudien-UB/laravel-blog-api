@@ -5,9 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Resources\AuthResource;
 use App\Http\Resources\BaseResource;
 use App\Http\Resources\UserResource;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller

@@ -40,6 +40,8 @@ Route::middleware(['jwtToken', 'api'])->group(function () {
 
         // Endpoint untuk menghapus user
         Route::delete('/delete/{userId}', 'destroy');
+
+        Route::post('/upload-image-profile', 'uploadImageProfile');
     });
 
     /**

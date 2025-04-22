@@ -9,6 +9,8 @@ use App\Models\Blog;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+
+
 class BlogController extends Controller
 {
     /**
@@ -36,24 +38,42 @@ class BlogController extends Controller
      */
     public function store(Request $request)
     {
+        // Validasi data
         $validated = $request->validate([
-            'title' => ['required','max:100'],
-            'content'=> ['required'],
+            'title'   => ['required', 'max:100'],
+            'content' => ['required'],
+            'image'   => ['required', 'image', 'max:4096'], // Maksimum 4MB
         ]);
 
         $user = auth()->user();
-        if(!$user){
-            abort(Response::HTTP_UNAUTHORIZED,'Unauthorized');
+        if (!$user) {
+            abort(Response::HTTP_UNAUTHORIZED, 'Unauthorized');
         }
+
+
+        try {
+            $uploadedFile = CloudinaryController::uploadImage($request->file('image'), $validated['title'], 'blog');
+            $urlImage = $uploadedFile['secure_url'];
+            $idImage = $uploadedFile['public_id'];
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Image upload failed',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
         $blog = Blog::create([
-            'title' => $validated['title'],
-            'content' => $validated['content'],
-            'user_id' => $user->id,
+            'title'     => $validated['title'],
+            'content'   => $validated['content'],
+            'id_image'  => $idImage,
+            'url_image' => $urlImage,
+            'user_id'   => $user->id,
         ]);
 
-        return BaseResource::respond(Response::HTTP_CREATED, 'Blog created successfully', new BlogResource($blog));
-
+        return BaseResource::respond(Response::HTTP_CREATED, 'Blog created successfully', new BlogResource($blog) );
     }
+
+
 
     /**
      * Display the specified resource.
@@ -125,7 +145,15 @@ class BlogController extends Controller
         if(!$blog->user_id == auth()->user()->id){
             abort(Response::HTTP_FORBIDDEN,'Unauthorized');
         }
+
+        $res = CloudinaryController::deleteImage($blog->id_image);
+        if(empty($res)){
+            abort(Response::HTTP_INTERNAL_SERVER_ERROR,'Failed to delete image');
+        }
         $blog->delete();
+
         return BaseResource::respond(Response::HTTP_OK,'Blog deleted successfully');
     }
+
+
 }

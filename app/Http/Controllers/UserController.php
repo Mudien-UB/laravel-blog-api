@@ -53,6 +53,43 @@ class UserController extends Controller
         return BaseResourcePageable::respond(Response::HTTP_OK,'Data user berhasil diupdate', UserResource::make($user));
 
     }
+    public function uploadImageProfile(Request $request)
+    {
+        $validated = $request->validate([
+            'image' => ['required', 'image', 'max:4096'], // Maksimum 4MB
+        ]);
+
+        $user = auth()->user();
+        if (!$user) {
+            abort(Response::HTTP_UNAUTHORIZED, 'Unauthorized');
+        }
+
+        $publicId = $user->id_image_profile ?? null;
+
+        try {
+
+            if(!empty($publicId)){
+                $resDeleted = CloudinaryController::deleteImage($publicId);
+            }
+
+            if(empty($resDeleted)){
+                abort(Response::HTTP_INTERNAL_SERVER_ERROR, 'Failed to delete image');
+            }
+
+            $uploadedFile = CloudinaryController::uploadImage($validated['image'], 'profile:'.$user->id, 'profile');
+            $urlImage = $uploadedFile['secure_url'];
+            $idImage = $uploadedFile['public_id'];
+        } catch (\Exception $e) {
+            abort(Response::HTTP_BAD_REQUEST, $e->getMessage());
+        }
+
+        $user->id_image_profile = $idImage;
+        $user->url_image_profile = $urlImage;
+        $user->save();
+
+        return BaseResource::respond(Response::HTTP_OK, 'Data user berhasil diupdate', new UserResource($user));
+    }
+
 
     public function destroy(String $userId){
         $user = User::find($userId);
