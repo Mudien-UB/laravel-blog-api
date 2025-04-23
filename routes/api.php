@@ -1,15 +1,13 @@
 <?php
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /**
- * Group routing untuk autentikasi (Auth)
- */
-
-/**
- * Routing public
+ * Routing publik
  */
 Route::post('/register', [UserController::class, 'store']);
 Route::post('/login', [AuthController::class, 'login']);
@@ -17,49 +15,44 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/blog', [BlogController::class, 'index']);
 Route::get('/blog/slug/{slug}', [BlogController::class, 'showBySlug']);
 
-
-
+/**
+ * Routing privat
+ */
 Route::middleware(['jwtToken', 'api'])->group(function () {
 
     Route::prefix('/auth')->group(function () {
         Route::controller(AuthController::class)->group(function () {
-            // Endpoint untuk logout
             Route::post('/logout', 'logout');
-
-            // Endpoint untuk mendapatkan data user yang sedang login
             Route::get('/me', 'getMe');
         });
     });
 
-
-
     Route::prefix('user')->controller(UserController::class)->group(function () {
         Route::get('/', 'index');
-        // Endpoint untuk memperbarui data user
         Route::put('/update/{userId}', 'update');
-
-        // Endpoint untuk menghapus user
         Route::delete('/delete/{userId}', 'destroy');
-
         Route::post('/upload-image-profile', 'uploadImageProfile');
     });
 
     /**
-     * Group routing untuk blog management
+     * Group routing untuk manajemen blog
      */
     Route::prefix('blog')->controller(BlogController::class)->group(function () {
-
-        Route::get('/id/{blogId}',  'showById');
-        // Endpoint untuk memperbarui blog
+        Route::get('/id/{blogId}', 'showById');
         Route::put('/update/{blogId}', 'update');
-
-        // Endpoint untuk membuat blog baru
         Route::post('/create', 'store');
-
-        // Endpoint untuk menghapus blog
         Route::delete('/delete/{blogId}', 'destroy');
     });
 
+    /**
+     * Group routing untuk manajemen komentar pada blog
+     */
+    Route::prefix('blog')->controller(CommentController::class)->group(function () {
+        Route::get('/{blogId}/comment', 'index');
+        Route::post('/{blogId}/comment', 'store');
+        Route::delete('/comment/{commentId}', 'destroy');
+        Route::post('/comment/{commentId}/restore', 'restore');
+    });
 });
 
 /**

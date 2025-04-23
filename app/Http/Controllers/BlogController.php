@@ -38,7 +38,7 @@ class BlogController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi data
+
         $validated = $request->validate([
             'title'   => ['required', 'max:100'],
             'content' => ['required'],

@@ -68,13 +68,14 @@ class UserController extends Controller
 
         try {
 
-            if(!empty($publicId)){
+            if($publicId){
                 $resDeleted = CloudinaryController::deleteImage($publicId);
+                if(empty($resDeleted)){
+                    abort(Response::HTTP_INTERNAL_SERVER_ERROR, 'Failed to delete image');
+                }
             }
 
-            if(empty($resDeleted)){
-                abort(Response::HTTP_INTERNAL_SERVER_ERROR, 'Failed to delete image');
-            }
+
 
             $uploadedFile = CloudinaryController::uploadImage($validated['image'], 'profile:'.$user->id, 'profile');
             $urlImage = $uploadedFile['secure_url'];
